@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,9 +75,16 @@ const Index = () => {
             <a href="#catalog" className="hover:text-primary transition-colors">ЖАНРЫ</a>
             <a href="#catalog" className="hover:text-primary transition-colors">НОВИНКИ</a>
           </nav>
-          <Button variant="outline" className="font-display tracking-wider border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground">
-            <Icon name="User" size={16} className="mr-2" />ВОЙТИ
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link to="/admin">
+              <Button variant="ghost" size="sm" className="font-display tracking-wider text-muted-foreground hover:text-primary">
+                <Icon name="Settings" size={16} className="mr-2" />АДМИН
+              </Button>
+            </Link>
+            <Button variant="outline" className="font-display tracking-wider border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground">
+              <Icon name="User" size={16} className="mr-2" />ВОЙТИ
+            </Button>
+          </div>
         </div>
       </header>
 
