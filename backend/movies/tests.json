@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Список всех фильмов",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Поиск по названию",
+      "method": "GET",
+      "path": "/?q=орбита",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Фильтр по жанру и рейтингу",
+      "method": "GET",
+      "path": "/?genre=Драма&min_rating=8",
+      "expectedStatus": 200
+    }
+  ]
+}

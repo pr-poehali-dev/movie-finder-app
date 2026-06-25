@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+const API_URL = 'https://functions.poehali.dev/168ccdf1-ea45-4c6f-a234-4e0638117526';
 
 interface Movie {
   id: number;
@@ -21,44 +23,42 @@ interface Movie {
   trailerId: string;
 }
 
-const POSTERS = {
-  scifi: 'https://cdn.poehali.dev/projects/aa5ca6f7-0c69-446a-9b81-2fde722e2a97/files/5e4e0ad6-a1b7-45cd-b8f2-e75559d69615.jpg',
-  fantasy: 'https://cdn.poehali.dev/projects/aa5ca6f7-0c69-446a-9b81-2fde722e2a97/files/a3364faa-0015-4554-b8fc-35033d788a36.jpg',
-  noir: 'https://cdn.poehali.dev/projects/aa5ca6f7-0c69-446a-9b81-2fde722e2a97/files/5d763b43-1ca9-416c-80ca-6f8606025c53.jpg',
-};
-
-const MOVIES: Movie[] = [
-  { id: 1, title: 'Грань Горизонта', year: 2024, genre: 'Фантастика', rating: 8.7, duration: '2ч 18м', poster: POSTERS.scifi, actors: ['Алекс Райан', 'Мира Соул'], description: 'Космический инженер обнаруживает сигнал из глубин галактики, который меняет представление человечества о времени и пространстве.', trailerId: 'aqz-KE-bpKQ' },
-  { id: 2, title: 'Золотой Предел', year: 2023, genre: 'Драма', rating: 9.1, duration: '2ч 41м', poster: POSTERS.fantasy, actors: ['Кай Лоренс', 'Нора Вэйн'], description: 'Эпическое путешествие на край мира, где герою предстоит сделать выбор между долгом и любовью.', trailerId: 'd9MyW72ELq0' },
-  { id: 3, title: 'Дождь над Городом', year: 2024, genre: 'Триллер', rating: 8.4, duration: '1ч 56м', poster: POSTERS.noir, actors: ['Виктор Грэй', 'Лина Морс'], description: 'Детектив погружается в лабиринт ночного города, расследуя дело, которое связано с его собственным прошлым.', trailerId: 'TcMBFSGVi1c' },
-  { id: 4, title: 'Тёмная Орбита', year: 2022, genre: 'Фантастика', rating: 7.9, duration: '2ч 05м', poster: POSTERS.scifi, actors: ['Эван Сторм', 'Айя Ким'], description: 'Команда исследователей оказывается в ловушке на заброшенной орбитальной станции.', trailerId: 'aqz-KE-bpKQ' },
-  { id: 5, title: 'Последний Рассвет', year: 2023, genre: 'Драма', rating: 8.8, duration: '2ч 12м', poster: POSTERS.fantasy, actors: ['Нора Вэйн', 'Том Эшфорд'], description: 'История семьи, переживающей перемены на фоне величественных пейзажей севера.', trailerId: 'd9MyW72ELq0' },
-  { id: 6, title: 'Неоновый Призрак', year: 2024, genre: 'Триллер', rating: 8.2, duration: '1ч 49м', poster: POSTERS.noir, actors: ['Лина Морс', 'Дэн Хейл'], description: 'Хакер вступает в смертельную игру с корпорацией, контролирующей весь город.', trailerId: 'TcMBFSGVi1c' },
-];
-
-const GENRES = ['Все', 'Фантастика', 'Драма', 'Триллер'];
-
 const Index = () => {
   const [search, setSearch] = useState('');
   const [genre, setGenre] = useState('Все');
   const [minRating, setMinRating] = useState(0);
   const [selected, setSelected] = useState<Movie | null>(null);
 
-  const featured = MOVIES[1];
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [featured, setFeatured] = useState<Movie | null>(null);
+  const [genres, setGenres] = useState<string[]>(['Все']);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return MOVIES.filter((m) => {
-      const matchSearch =
-        !q ||
-        m.title.toLowerCase().includes(q) ||
-        m.genre.toLowerCase().includes(q) ||
-        m.actors.some((a) => a.toLowerCase().includes(q));
-      const matchGenre = genre === 'Все' || m.genre === genre;
-      const matchRating = m.rating >= minRating;
-      return matchSearch && matchGenre && matchRating;
-    });
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set('q', search.trim());
+      if (genre !== 'Все') params.set('genre', genre);
+      if (minRating > 0) params.set('min_rating', String(minRating));
+
+      fetch(`${API_URL}?${params.toString()}`, { signal: ctrl.signal })
+        .then((r) => r.json())
+        .then((data) => {
+          setMovies(data.movies || []);
+          if (data.featured) setFeatured(data.featured);
+          if (data.genres) setGenres(data.genres);
+        })
+        .catch(() => {});
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
   }, [search, genre, minRating]);
+
+  const filtered = movies;
+  const GENRES = genres;
 
   return (
     <div className="min-h-screen bg-background grain">
@@ -81,6 +81,7 @@ const Index = () => {
       </header>
 
       {/* Hero */}
+      {featured && (
       <section className="relative h-[88vh] min-h-[560px] overflow-hidden">
         <div className="absolute inset-0">
           <img src={featured.poster} alt={featured.title} className="w-full h-full object-cover animate-ken-burns" />
@@ -108,6 +109,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Search & Filters */}
       <section id="catalog" className="container py-12">
